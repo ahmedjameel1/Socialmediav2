@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block title %}{{ image.title }}{% endblock %}
+
+{% block content %}
+  <h1>{{ image.title }}</h1>
+  {% load thumbnail %}
+  <a href="{{ image.image.url }}">
+    <img src="{% thumbnail image.image 300x0 %}" class="image-detail">
+  </a>
+  {% with total_likes=image.users_like.count users_like=image.users_like.all %}
+    <div class="image-info">
+      <div>
+        <span class="count">
+          <span class="total">{{total_likes}}</span>
+          <span class="like-phrase">like{{total_likes|pluralize:"s"}}</span>
+        </span>
+        <a href="#" data-id="{{ image.id }}" data-action="{% if request.user in users_like %}un{% endif %}like"
+    class="like button">
+          {% if request.user not in users_like %}
+            Like
+          {% else %}
+            Unlike
+          {% endif %}
+        </a>
+      </div>
+      {{ image.description|linebreaks }}
+    </div>
+    <div class="image-likes">
+        {% for user in users_like|slice:":8" %}
+          <div>
+            {% if user.profile.photo %}
+              <img src="{{ user.profile.imageURL }}" alt="{{ user.username }}" />
+            {% else %}
+              <img src="/users/default.png" alt="{{ user.username }}" />
+            {% endif %}
+          </div>
+        {% empty %}
+         <p id='empty'> Nobody likes this image yet. </p>
+        {% endfor %}
+      </div>
+  {% endwith %}
+  {{ current_user_img|json_script:"current_user_img" }}
+  {% endblock %}
+
+
+
+{% block domready %}
+  const url = '{% url "app_images:like" %}';
+  var options = {
+    method: 'POST',
+    headers: {'X-CSRFToken': csrftoken},
+    mode: 'same-origin'
+  }
+
+  document.querySelector('a.like')
+          .addEventListener('click', function(e){
+    e.preventDefault();
+    var likeButton = this;
+
+    // add request body
+    var formData = new FormData();
+    formData.append('id', likeButton.dataset.id);
+    formData.append('action', likeButton.dataset.action);
+    options['body'] = formData;
+
+    // send HTTP request
+    fetch(url, options)
+    .then(response => response.json())
+    .then(data => {
+    if (data['status'] === 'ok')
+      { 
+        var previousAction = likeButton.dataset.action;
+
+        // toggle button text and data-action
+        var action = previousAction === 'like' ? 'unlike' : 'like';
+        likeButton.dataset.action = action;
+        likeButton.innerHTML = action;
+
+        // update like count
+        var likeCount = document.querySelector('span.count .total');
+        var totalLikes = parseInt(likeCount.innerHTML);
+        var likePhrase = document.querySelector('.like-phrase');
+        
+        likeCount.innerHTML = previousAction === 'like' ? totalLikes + 1 : totalLikes - 1;
+        var empty_phrase = document.getElementById('empty');
+        if (totalLikes < 1){
+          empty_phrase.innerHTML = '';
+        } 
+        else{
+          empty_phrase.innerHTML = 'Nobody likes this image yet.';
+        }
+        likeCount = document.querySelector('span.count .total');
+        var likeText = parseInt(likeCount.innerHTML) === 1 ? 'like' : 'likes';
+        likePhrase.innerHTML = likeText;
+
+        //add the user pic to the list\
+        var img_url = document.getElementById('current_user_img').textContent;
+        img_url = img_url.replace(/"/g, '');
+        var img_list = document.querySelector('.image-likes');
+        var imgTags = img_list.querySelectorAll('img');
+
+        if (action === 'like') {
+          imgTags.forEach(function(img) {
+            var startIndex = img.src.indexOf('/users');
+            var extractedUrl = img.src.substring(startIndex);
+            if (img_url === extractedUrl) {
+              img.parentNode.remove();  // Use parentNode to remove the parent div containing the image
+            }
+          });
+        }
+        else{
+          var new_div = document.createElement('div');
+          var img = document.createElement('img');
+          img.src = img_url;
+          new_div.appendChild(img);
+          img_list.appendChild(new_div);
+
+        }
+
+    }
+    })
+  });
+{% endblock %}

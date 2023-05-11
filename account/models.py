@@ -9,7 +9,16 @@ class Profile(models.Model):
                                 on_delete=models.CASCADE)
     date_of_birth = models.DateField(blank=True, null=True)
     photo = models.ImageField(upload_to='users/%Y/%m/%d/',
-                              blank=True)
+                              blank=True, default='users/default.png')
 
     def __str__(self):
         return f'Profile of {self.user.username}'
+
+    @property
+    def imageURL(self):
+        try:
+            url = self.photo.url
+            print(url)
+        except:
+            url = '/users/default.png'
+        return url
