@@ -70,6 +70,7 @@ INSTALLED_APPS = [
     'django_extensions',
     'app_images.apps.AppImagesConfig',
     'easy_thumbnails',
+    'actions.apps.ActionsConfig',
 
 ]
 

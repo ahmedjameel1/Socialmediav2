@@ -8,6 +8,7 @@ from django.shortcuts import get_object_or_404
 from .models import Image
 from django.http import HttpResponse
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from actions.utils import create_action
 
 
 @login_required
@@ -22,7 +23,7 @@ def image_create(request):
             # assign current user to the item
             new_image.user = request.user
             new_image.save()
-
+            create_action(request.user, 'bookmarked image', new_image)
             messages.success(request,
                              'Image added successfully')
             # redirect to new created item detail view
