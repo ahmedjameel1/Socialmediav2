@@ -191,3 +191,8 @@ SOCIAL_AUTH_TWITTER_SECRET = ''
 SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = ''  # Google Client ID
 # Google Client Secret
 SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = ''
+
+# redis settings
+REDIS_HOST = 'localhost'
+REDIS_PORT = 6379
+REDIS_DB = 0
